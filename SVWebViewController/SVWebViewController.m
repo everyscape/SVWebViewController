@@ -8,7 +8,9 @@
 
 #import "SVWebViewController.h"
 
-@interface SVWebViewController () <UIWebViewDelegate, UIActionSheetDelegate, MFMailComposeViewControllerDelegate>
+@interface SVWebViewController () <UIWebViewDelegate, UIActionSheetDelegate
+//, MFMailComposeViewControllerDelegate
+>
 
 @property (nonatomic, strong, readonly) UIBarButtonItem *backBarButtonItem;
 @property (nonatomic, strong, readonly) UIBarButtonItem *forwardBarButtonItem;
@@ -107,10 +109,10 @@
         
         if([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"googlechrome://"]] && (self.availableActions & SVWebViewControllerAvailableActionsOpenInChrome) == SVWebViewControllerAvailableActionsOpenInChrome)
             [pageActionSheet addButtonWithTitle:NSLocalizedStringFromTable(@"Open in Chrome", @"SVWebViewController", @"")];
-        
+/*
         if([MFMailComposeViewController canSendMail] && (self.availableActions & SVWebViewControllerAvailableActionsMailLink) == SVWebViewControllerAvailableActionsMailLink)
             [pageActionSheet addButtonWithTitle:NSLocalizedStringFromTable(@"Mail Link to this Page", @"SVWebViewController", @"")];
-        
+  */      
         [pageActionSheet addButtonWithTitle:NSLocalizedStringFromTable(@"Cancel", @"SVWebViewController", @"")];
         pageActionSheet.cancelButtonIndex = [self.pageActionSheet numberOfButtons]-1;
     }
@@ -200,6 +202,8 @@
     [mainWebView stopLoading];
  	[[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
     mainWebView.delegate = nil;
+    
+    [super dealloc];
 }
 
 #pragma mark - Toolbar
@@ -381,7 +385,7 @@
         UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
         pasteboard.string = self.mainWebView.request.URL.absoluteString;
     }
-    
+/*
     else if([title localizedCompare:NSLocalizedStringFromTable(@"Mail Link to this Page", @"SVWebViewController", @"")] == NSOrderedSame) {
         
 		MFMailComposeViewController *mailViewController = [[MFMailComposeViewController alloc] init];
@@ -397,10 +401,10 @@
         [self presentViewController:mailViewController animated:YES completion:NULL];
 #endif
 	}
-    
+  */
     pageActionSheet = nil;
 }
-
+/*
 #pragma mark -
 #pragma mark MFMailComposeViewControllerDelegate
 
@@ -415,5 +419,5 @@
     [self dismissViewControllerAnimated:YES completion:NULL];
 #endif
 }
-
+*/
 @end
