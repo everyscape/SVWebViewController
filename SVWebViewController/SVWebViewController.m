@@ -49,7 +49,7 @@
 @synthesize backBarButtonItem, forwardBarButtonItem, refreshBarButtonItem, stopBarButtonItem, actionBarButtonItem, pageActionSheet;
 
 static NSMutableDictionary *s_image_cache;
-static BOOL s_use_2x;
+static BOOL s_useHiRes;
 static UIUserInterfaceIdiom s_userInterfaceIdiom;
 static NSString *s_deviceType;
 static NSMutableDictionary *s_imageData;
@@ -61,7 +61,7 @@ static NSMutableDictionary *s_imageData;
         s_image_cache = [NSMutableDictionary dictionaryWithCapacity:2];
         UIScreen *screen = [UIScreen mainScreen];
         CGFloat scale = screen.scale;
-        s_use_2x = scale == 2.0;
+        s_useHiRes = scale == 2.0;
         UIDevice *device = [UIDevice currentDevice];
         s_userInterfaceIdiom = device.userInterfaceIdiom;
         if (s_userInterfaceIdiom == UIUserInterfaceIdiomPad)
@@ -83,7 +83,7 @@ static NSMutableDictionary *s_imageData;
     unsigned int length = 0;
     if ([s_deviceType isEqualToString:@"iphone"])
     {
-        if (s_use_2x)
+        if (s_useHiRes)
         {
             if ([imageName isEqualToString:@"back"])
             {
@@ -119,7 +119,7 @@ static NSMutableDictionary *s_imageData;
 
 +(NSString*)getDeviceSpecificImageName:(NSString*)imageName
 {
-    NSString *deviceSpecificImageName = s_use_2x ? [NSString stringWithFormat:@"%@@2x~%@",imageName,s_deviceType] : [NSString stringWithFormat:@"%@~%@",imageName,s_deviceType];
+    NSString *deviceSpecificImageName = s_useHiRes ? [NSString stringWithFormat:@"%@@2x~%@",imageName,s_deviceType] : [NSString stringWithFormat:@"%@~%@",imageName,s_deviceType];
     return deviceSpecificImageName;
 }
 
@@ -152,6 +152,14 @@ static NSMutableDictionary *s_imageData;
         if (data != nil)
         {
             image = [[UIImage alloc] initWithData:data];
+            if (s_useHiRes)
+            {
+                CGImageRef cgImage = image.CGImage;
+                UIImage *adjustedImage = [[UIImage alloc] initWithCGImage:cgImage scale:2.0f orientation:UIImageOrientationUp];
+                [image release];
+                image = [adjustedImage retain];
+                [adjustedImage release];
+            }
             [s_image_cache setObject:image forKey:deviceSpecificImageName];
             [image release];
         }
