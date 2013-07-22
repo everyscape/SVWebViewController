@@ -28,9 +28,13 @@
 }
 
 - (id)initWithURL:(NSURL *)URL {
-    self.webViewController = [[SVWebViewController alloc] initWithURL:URL];
+    SVWebViewController *webViewCtlr = [[SVWebViewController alloc] initWithURL:URL];
+    self.webViewController = webViewCtlr;
+    [webViewCtlr release];
     if (self = [super initWithRootViewController:self.webViewController]) {
-        self.webViewController.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:webViewController action:@selector(doneButtonClicked:)];
+        UIBarButtonItem *leftBtnItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:webViewController action:@selector(doneButtonClicked:)];
+        self.webViewController.navigationItem.leftBarButtonItem = leftBtnItem;
+        [leftBtnItem release];
     }
     return self;
 }

@@ -7,6 +7,10 @@
 //  https://github.com/samvermette/SVWebViewController
 
 #import "SVWebViewController.h"
+#import "back~iphone.h"
+#import "back@2x~iphone.h"
+#import "forward~iphone.h"
+#import "forward@2x~iphone.h"
 
 @interface SVWebViewController () <UIWebViewDelegate, UIActionSheetDelegate
 //, MFMailComposeViewControllerDelegate
@@ -44,12 +48,125 @@
 @synthesize URL, mainWebView;
 @synthesize backBarButtonItem, forwardBarButtonItem, refreshBarButtonItem, stopBarButtonItem, actionBarButtonItem, pageActionSheet;
 
+static NSMutableDictionary *s_image_cache;
+static BOOL s_use_2x;
+static UIUserInterfaceIdiom s_userInterfaceIdiom;
+static NSString *s_deviceType;
+static NSMutableDictionary *s_imageData;
+
++(void)initialize
+{
+    if (self == [SVWebViewController class])
+    {
+        s_image_cache = [NSMutableDictionary dictionaryWithCapacity:2];
+        UIScreen *screen = [UIScreen mainScreen];
+        CGFloat scale = screen.scale;
+        s_use_2x = scale == 2.0;
+        UIDevice *device = [UIDevice currentDevice];
+        s_userInterfaceIdiom = device.userInterfaceIdiom;
+        if (s_userInterfaceIdiom == UIUserInterfaceIdiomPad)
+        {
+            s_deviceType = @"ipad";
+        }
+        else if (s_userInterfaceIdiom == UIUserInterfaceIdiomPhone)
+        {
+            s_deviceType = @"iphone";
+        }
+        s_imageData = [NSMutableDictionary dictionaryWithCapacity:2];
+    }
+}
+
++(NSData*)newImageData:(NSString*)imageName
+{
+    NSData *imageData = nil;
+    unsigned char *bytes = nil;
+    unsigned int length = 0;
+    if ([s_deviceType isEqualToString:@"iphone"])
+    {
+        if (s_use_2x)
+        {
+            if ([imageName isEqualToString:@"back"])
+            {
+                bytes = back_2x_iphone_png;
+                length= back_2x_iphone_png_len;
+            }
+            else if ([imageName isEqualToString:@"forward"])
+            {
+                bytes = forward_2x_iphone_png;
+                length = forward_2x_iphone_png_len;
+            }
+        }
+        else
+        {
+            if ([imageName isEqualToString:@"back"])
+            {
+                bytes = back_iphone_png;
+                length= back_iphone_png_len;
+            }
+            else if ([imageName isEqualToString:@"forward"])
+            {
+                bytes = forward_iphone_png;
+                length = forward_iphone_png_len;
+            }
+        }
+    }
+    if (bytes != nil && length > 0)
+    {
+        imageData = [[NSData alloc] initWithBytes:bytes length:length];
+    }
+    return imageData;
+}
+
++(NSString*)getDeviceSpecificImageName:(NSString*)imageName
+{
+    NSString *deviceSpecificImageName = s_use_2x ? [NSString stringWithFormat:@"%@@2x~%@",imageName,s_deviceType] : [NSString stringWithFormat:@"%@~%@",imageName,s_deviceType];
+    return deviceSpecificImageName;
+}
+
++(void)setupImageData
+{
+    NSString *backImageName = [self getDeviceSpecificImageName:@"back"];
+    NSData *backImageData = [self newImageData:@"back"];
+    [s_imageData setObject:backImageData forKey:backImageName];
+    [backImageData release];
+    NSString *forwardImageName = [self getDeviceSpecificImageName:@"forward"];
+    NSData *forwardImageData = [self newImageData:@"forward"];
+    [s_imageData setObject:forwardImageData forKey:forwardImageName];
+    [forwardImageData release];
+}
+
+-(void)didReceiveMemoryWarning
+{
+    [s_image_cache removeAllObjects];
+    [s_imageData removeAllObjects];
+    [[self class] setupImageData];
+}
+
++(UIImage*)imageNamed:(NSString*)imageName
+{
+    NSString *deviceSpecificImageName = [self getDeviceSpecificImageName:imageName];
+    UIImage *image = [s_image_cache objectForKey:deviceSpecificImageName];
+    if (image == nil)
+    {
+        NSData *data = [s_imageData objectForKey:deviceSpecificImageName];
+        if (data != nil)
+        {
+            image = [[UIImage alloc] initWithData:data];
+            [s_image_cache setObject:image forKey:deviceSpecificImageName];
+            [image release];
+        }
+    }
+    return image;
+}
+
 #pragma mark - setters and getters
 
 - (UIBarButtonItem *)backBarButtonItem {
     
     if (!backBarButtonItem) {
-        backBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"SVWebViewController.bundle/iPhone/back"] style:UIBarButtonItemStylePlain target:self action:@selector(goBackClicked:)];
+//        UIImage *imgBack = [UIImage imageNamed:@"SVWebViewController.bundle/iPhone/back"];
+        UIImage *imgBack = [[self class] imageNamed:@"back"];
+        backBarButtonItem = [[UIBarButtonItem alloc] initWithImage:imgBack style:UIBarButtonItemStylePlain target:self action:@selector(goBackClicked:)];
         backBarButtonItem.imageInsets = UIEdgeInsetsMake(2.0f, 0.0f, -2.0f, 0.0f);
 		backBarButtonItem.width = 18.0f;
     }
@@ -59,7 +176,9 @@
 - (UIBarButtonItem *)forwardBarButtonItem {
     
     if (!forwardBarButtonItem) {
-        forwardBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"SVWebViewController.bundle/iPhone/forward"] style:UIBarButtonItemStylePlain target:self action:@selector(goForwardClicked:)];
+//        UIImage *imgForward =[UIImage imageNamed:@"SVWebViewController.bundle/iPhone/forward"];
+        UIImage *imgForward = [[self class] imageNamed:@"forward"];
+        forwardBarButtonItem = [[UIBarButtonItem alloc] initWithImage:imgForward style:UIBarButtonItemStylePlain target:self action:@selector(goForwardClicked:)];
         forwardBarButtonItem.imageInsets = UIEdgeInsetsMake(2.0f, 0.0f, -2.0f, 0.0f);
 		forwardBarButtonItem.width = 18.0f;
     }
@@ -252,8 +371,11 @@
         toolbar.items = items;
 				toolbar.barStyle = self.navigationController.navigationBar.barStyle;
         toolbar.tintColor = self.navigationController.navigationBar.tintColor;
-        self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:toolbar];
-    } 
+        UIBarButtonItem *rtBarBtnItem = [[UIBarButtonItem alloc] initWithCustomView:toolbar];
+        [toolbar release];
+        self.navigationItem.rightBarButtonItem = rtBarBtnItem;
+        [rtBarBtnItem release];
+    }
     
     else {
         NSArray *items;
@@ -286,6 +408,8 @@
 				self.navigationController.toolbar.tintColor = self.navigationController.navigationBar.tintColor;
         self.toolbarItems = items;
     }
+    [flexibleSpace release];
+    [fixedSpace release];
 }
 
 #pragma mark -
