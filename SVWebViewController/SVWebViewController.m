@@ -58,7 +58,7 @@ static NSMutableDictionary *s_imageData;
 {
     if (self == [SVWebViewController class])
     {
-        s_image_cache = [NSMutableDictionary dictionaryWithCapacity:2];
+        s_image_cache = [[NSMutableDictionary alloc] initWithCapacity:2];
         UIScreen *screen = [UIScreen mainScreen];
         CGFloat scale = screen.scale;
         s_useHiRes = scale == 2.0;
@@ -72,7 +72,8 @@ static NSMutableDictionary *s_imageData;
         {
             s_deviceType = @"iphone";
         }
-        s_imageData = [NSMutableDictionary dictionaryWithCapacity:2];
+        s_imageData = [[NSMutableDictionary alloc] initWithCapacity:2];
+        [self setupImageData];
     }
 }
 
@@ -144,11 +145,12 @@ static NSMutableDictionary *s_imageData;
 
 +(UIImage*)imageNamed:(NSString*)imageName
 {
+    NSData *data = nil;
     NSString *deviceSpecificImageName = [self getDeviceSpecificImageName:imageName];
     UIImage *image = [s_image_cache objectForKey:deviceSpecificImageName];
     if (image == nil)
     {
-        NSData *data = [s_imageData objectForKey:deviceSpecificImageName];
+        data = [s_imageData objectForKey:deviceSpecificImageName];
         if (data != nil)
         {
             image = [[UIImage alloc] initWithData:data];
