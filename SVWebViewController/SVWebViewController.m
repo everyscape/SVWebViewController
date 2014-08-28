@@ -141,6 +141,7 @@ static NSMutableDictionary *s_imageData;
     [s_image_cache removeAllObjects];
     [s_imageData removeAllObjects];
     [[self class] setupImageData];
+    [super didReceiveMemoryWarning];
 }
 
 +(UIImage*)imageNamed:(NSString*)imageName
